@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DaiP智能聊天室 - 聊天中</title>
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --background-color: #f5f7fa;
+            --chat-bg: #ffffff;
+            --text-color: #333;
+            --text-secondary: #666;
+            --border-color: #e1e5e9;
+            --input-bg: #f8f9fa;
+            --message-box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            --online-indicator: #4caf50;
+            --system-message-bg: #e3f2fd;
+            --system-message-text: #1976d2;
+            --command-bg: #fff3e0;
+            --command-text: #f57c00;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .online-count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--online-indicator);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .btn-logout {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .chat-main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--chat-bg);
+            margin: 10px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .message {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            position: relative;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-self {
+            align-self: flex-end;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            box-shadow: var(--message-box-shadow);
+        }
+
+        .message-other {
+            align-self: flex-start;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            box-shadow: var(--message-box-shadow);
+        }
+
+        .message-system {
+            align-self: center;
+            background-color: var(--system-message-bg);
+            color: var(--system-message-text);
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 12px;
+            max-width: 90%;
+        }
+
+        .message-command {
+            align-self: center;
+            background-color: var(--command-bg);
+            color: var(--command-text);
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 90%;
+            font-style: italic;
+        }
+
+        .message-header {
+            font-size: 12px;
+            margin-bottom: 4px;
+            opacity: 0.8;
+        }
+
+        .message-content {
+            font-size: 15px;
+            line-height: 1.4;
+        }
+
+        .message-time {
+            font-size: 10px;
+            position: absolute;
+            bottom: 6px;
+            right: 10px;
+            opacity: 0.6;
+        }
+
+        .input-area {
+            padding: 20px;
+            background-color: var(--chat-bg);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 12px 20px;
+            border: 2px solid var(--border-color);
+            border-radius: 30px;
+            font-size: 15px;
+            resize: none;
+            max-height: 100px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        .message-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .input-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-emoji {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+        
+        .ai-reply {
+            background-color: #e8f5e9;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 8px;
+            color: #2e7d32;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .command-content {
+            background-color: #e3f2fd;
+            border-radius: 8px;
+            padding: 10px;
+            border-left: 4px solid #2196f3;
+        }
+        
+        .play-btn {
+            background-color: #ff5722;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.3s;
+        }
+        
+        .play-btn:hover {
+            background-color: #e64a19;
+        }
+        
+        .movie-container {
+            margin-top: 8px;
+        }
+        
+        .movie-url {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            word-break: break-all;
+        }
+        
+        .command-label {
+            font-weight: bold;
+            color: #2196f3;
+            margin-bottom: 5px;
+        }
+        
+        .ai-question {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            padding: 8px;
+            font-style: italic;
+        }
+
+        .btn-emoji:hover {
+            background-color: var(--input-bg);
+        }
+
+        .btn-send {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 600;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .btn-send:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-send:active {
+            transform: translateY(0);
+        }
+
+        .btn-send:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .emoji-panel {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 10px;
+            display: none;
+        }
+
+        .emoji-panel.show {
+            display: grid;
+        }
+
+        .emoji-item {
+            font-size: 24px;
+            text-align: center;
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+
+        .emoji-item:hover {
+            background-color: var(--input-bg);
+        }
+
+        .users-sidebar {
+            width: 280px;
+            background-color: var(--chat-bg);
+            margin: 10px 10px 10px 0;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border-color);
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .users-list {
+            flex: 1;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .user-item {
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-radius: 8px;
+            transition: background-color 0.3s;
+        }
+
+        .user-item:hover {
+            background-color: var(--input-bg);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            font-weight: 600;
+        }
+
+        .user-name {
+            font-weight: 500;
+        }
+
+        .command-helper {
+            font-size: 12px;
+            color: var(--text-secondary);
+            text-align: center;
+            margin-top: 5px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .users-sidebar {
+                display: none;
+            }
+            
+            .chat-main {
+                margin: 0;
+                border-radius: 0;
+            }
+            
+            .header h1 {
+                font-size: 16px;
+            }
+            
+            .online-count, .btn-logout {
+                font-size: 12px;
+                padding: 4px 12px;
+            }
+            
+            .messages {
+                padding: 15px 10px;
+            }
+            
+            .message {
+                max-width: 85%;
+                padding: 10px 14px;
+            }
+            
+            .emoji-panel {
+                bottom: 90px;
+                right: 10px;
+                left: 10px;
+            }
+        }
+
+        /* 滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--input-bg);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-secondary);
+        }
+
+        /* 加载动画 */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>DaiP智能聊天室</h1>
+        <div class="header-info">
+            <div class="online-count">
+                <span class="online-dot"></span>
+                <span id="onlineCount">0</span> 人在线
+            </div>
+            <button id="logoutBtn" class="btn-logout">退出</button>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="users-sidebar">
+            <div class="sidebar-header">在线用户</div>
+            <div class="users-list" id="usersList">
+                <!-- 用户列表将通过JavaScript动态加载 -->
+            </div>
+        </div>
+
+        <div class="chat-main">
+            <div class="messages" id="messages">
+                <div class="message message-system">
+                    欢迎来到DaiP智能聊天室！
+                </div>
+                <div class="message message-command">
+                    <small>支持命令: @电影 url (播放电影) | @川小农 (AI对话)</small>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <textarea id="messageInput" class="message-input" placeholder="输入消息... 支持@命令和emoji表情" rows="1"></textarea>
+                <div class="input-actions">
+                    <button id="emojiBtn" class="btn-emoji">😊</button>
+                    <button id="sendBtn" class="btn-send" disabled>发送</button>
+                </div>
+            </div>
+
+            <div id="emojiPanel" class="emoji-panel">
+                <!-- emoji表情将通过JavaScript动态加载 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        // 获取URL参数
+        function getUrlParams() {
+            const params = {};
+            const queryString = window.location.search.substring(1);
+            const pairs = queryString.split('&');
+            for (const pair of pairs) {
+                const [key, value] = pair.split('=');
+                params[decodeURIComponent(key)] = decodeURIComponent(value || '');
+            }
+            return params;
+        }
+
+        const params = getUrlParams();
+        const nickname = params.nickname || '匿名用户';
+        const server = params.server || window.location.origin;
+
+        // WebSocket连接 - 使用5004端口
+        const socket = io('http://localhost:5004', {
+            query: { nickname: nickname },
+            transports: ['websocket']
+        });
+
+        // DOM元素
+        const messagesContainer = document.getElementById('messages');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const emojiBtn = document.getElementById('emojiBtn');
+        const emojiPanel = document.getElementById('emojiPanel');
+        const onlineCount = document.getElementById('onlineCount');
+        const usersList = document.getElementById('usersList');
+
+        // 常用emoji表情
+        const emojis = [
+            '😊', '😂', '😍', '🤔', '😎', '😢', '😡', '👍', 
+            '👎', '❤️', '🎉', '🎂', '🔥', '💯', '🙏', '👏',
+            '🎉', '🎁', '🎈', '🎯', '🎵', '🎸', '🎤', '🎧',
+            '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂'
+        ];
+
+        // 初始化emoji面板
+        function initEmojiPanel() {
+            emojis.forEach(emoji => {
+                const emojiItem = document.createElement('div');
+                emojiItem.className = 'emoji-item';
+                emojiItem.textContent = emoji;
+                emojiItem.addEventListener('click', () => {
+                    messageInput.value += emoji;
+                    messageInput.focus();
+                    checkSendButton();
+                });
+                emojiPanel.appendChild(emojiItem);
+            });
+        }
+
+        // 检查发送按钮状态
+        function checkSendButton() {
+            sendBtn.disabled = messageInput.value.trim() === '';
+        }
+
+        // 自动调整输入框高度
+        function adjustTextareaHeight() {
+            messageInput.style.height = 'auto';
+            messageInput.style.height = Math.min(messageInput.scrollHeight, 100) + 'px';
+        }
+
+        // 添加消息到聊天区域
+            function addMessage(data, isSelf = false) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'message';
+                
+                if (data.is_system) {
+                    messageDiv.className = 'message message-system';
+                    messageDiv.innerHTML = `<div class="message-content">${data.message}</div>`;
+                } else if (data.is_command) {
+                    messageDiv.className = 'message message-command';
+                    
+                    if (data.command_type === 'movie' && data.movie_url) {
+                        // 电影命令显示
+                        messageDiv.innerHTML = `
+                            <div class="message-header">${data.nickname}</div>
+                            <div class="message-content">
+                                <div class="command-label">电影分享:</div>
+                                <div class="movie-container">
+                                    <div class="movie-url">${data.movie_url}</div>
+                                    <div class="movie-player-placeholder">
+                                        <button class="play-btn" data-movie-url="${data.movie_url}">点击播放</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="message-time">${data.timestamp}</div>
+                        `;
+                    } else if (data.command_type === 'chuannong' && data.reply) {
+                        // 川小农命令显示
+                        messageDiv.innerHTML = `
+                            <div class="message-header">${data.nickname}</div>
+                            <div class="message-content">
+                                <div class="command-label">AI对话:</div>
+                                <div class="ai-question">问: ${data.user_question || ''}</div>
+                                <div class="ai-reply">
+                                    <strong>川小农:</strong> ${data.reply}
+                                </div>
+                            </div>
+                            <div class="message-time">${data.timestamp}</div>
+                        `;
+                    } else {
+                        // 通用命令显示
+                        messageDiv.innerHTML = `<div class="message-content">${data.message}</div>`;
+                    }
+                } else {
+                    messageDiv.className = `message ${isSelf ? 'message-self' : 'message-other'}`;
+                    
+                    if (!isSelf) {
+                        messageDiv.innerHTML = `
+                            <div class="message-header">${data.nickname}</div>
+                            <div class="message-content">${formatMessage(data.message)}</div>
+                            <div class="message-time">${data.timestamp}</div>
+                        `;
+                    } else {
+                        messageDiv.innerHTML = `
+                            <div class="message-content">${formatMessage(data.message)}</div>
+                            <div class="message-time">${data.timestamp}</div>
+                        `;
+                    }
+                }
+                
+                messagesContainer.appendChild(messageDiv);
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            }
+            
+            // 播放电影函数
+            function playMovie(movieUrl) {
+                // 创建播放模态框
+                const modal = document.createElement('div');
+                modal.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(0, 0, 0, 0.9);
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    z-index: 1000;
+                    padding: 20px;
+                    box-sizing: border-box;
+                `;
+                
+                const player = document.createElement('div');
+                player.style.cssText = `
+                    background: black;
+                    border-radius: 8px;
+                    overflow: hidden;
+                    max-width: 95%;
+                    max-height: 95%;
+                    position: relative;
+                    width: 100%;
+                    aspect-ratio: 16/9;
+                `;
+                
+                const closeBtn = document.createElement('button');
+                closeBtn.textContent = '关闭';
+                closeBtn.style.cssText = `
+                    position: absolute;
+                    top: 10px;
+                    right: 10px;
+                    background: rgba(0, 0, 0, 0.7);
+                    color: white;
+                    border: none;
+                    padding: 10px 20px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 16px;
+                    z-index: 10;
+                    transition: background 0.3s;
+                `;
+                
+                closeBtn.onmouseenter = () => {
+                    closeBtn.style.background = 'rgba(255, 0, 0, 0.8)';
+                };
+                
+                closeBtn.onmouseleave = () => {
+                    closeBtn.style.background = 'rgba(0, 0, 0, 0.7)';
+                };
+                
+                closeBtn.onclick = () => {
+                    document.body.removeChild(modal);
+                };
+                
+                // 判断是否为腾讯视频
+                if (movieUrl.includes('v.qq.com')) {
+                    // 对于腾讯视频，使用iframe嵌入
+                    const iframe = document.createElement('iframe');
+                    
+                    // 提取腾讯视频ID
+                    let videoId = '';
+                    // 从URL中提取视频ID (通常是最后一个斜杠后的部分，去掉.html)
+                    const idMatch = movieUrl.match(/\/([^/]+)\.html/);
+                    if (idMatch && idMatch[1]) {
+                        videoId = idMatch[1];
+                    }
+                    
+                    // 构建腾讯视频嵌入链接 (使用官方播放器)
+                    let embedUrl = '';
+                    if (videoId) {
+                        embedUrl = `https://v.qq.com/iframe/player.html?vid=${videoId}&tiny=0&auto=0`;
+                    } else {
+                        // 如果无法提取ID，尝试使用原始URL构建嵌入链接
+                        embedUrl = `https://v.qq.com/iframe/player.html?url=${encodeURIComponent(movieUrl)}&tiny=0&auto=0`;
+                    }
+                    
+                    iframe.src = embedUrl;
+                    iframe.allowFullscreen = true;
+                    iframe.sandbox = 'allow-same-origin allow-scripts allow-popups allow-forms allow-pointer-lock';
+                    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+                    iframe.style.cssText = `
+                        width: 100%;
+                        height: 100%;
+                        border: none;
+                        display: block;
+                    `;
+                    iframe.setAttribute('scrolling', 'no');
+                    iframe.setAttribute('frameborder', '0');
+                    
+                    player.appendChild(iframe);
+                } 
+                // 判断是否为B站视频
+                else if (movieUrl.includes('bilibili.com')) {
+                    // 对于B站视频，使用B站官方嵌入API
+                    const iframe = document.createElement('iframe');
+                    
+                    // 尝试从URL中提取BV号或EP号
+                    let videoId = '';
+                    let isBangumi = false;
+                    
+                    // 处理不同格式的B站链接
+                    if (movieUrl.includes('bilibili.com/video/')) {
+                        // 普通视频链接
+                        const bvMatch = movieUrl.match(/BV[0-9A-Za-z]+/);
+                        if (bvMatch) {
+                            videoId = bvMatch[0];
+                        }
+                    } else if (movieUrl.includes('bilibili.com/bangumi/play/')) {
+                        // 番剧链接
+                        const epMatch = movieUrl.match(/ep\d+/);
+                        if (epMatch) {
+                            videoId = epMatch[0];
+                            isBangumi = true;
+                        }
+                    }
+                    
+                    // 构建B站官方嵌入链接
+                    let embedUrl = '';
+                    if (videoId) {
+                        if (isBangumi) {
+                            embedUrl = `https://player.bilibili.com/player.html?aid=&cid=&page=1&as_wide=1&high_quality=1&danmaku=0&${videoId}`;
+                        } else {
+                            embedUrl = `https://player.bilibili.com/player.html?bvid=${videoId}&page=1&as_wide=1&high_quality=1&danmaku=0`;
+                        }
+                    } else {
+                        // 如果无法提取ID，则使用原始URL但改为官方播放器
+                        embedUrl = `https://player.bilibili.com/player.html?as_wide=1&high_quality=1&danmaku=0&url=${encodeURIComponent(movieUrl)}`;
+                    }
+                    
+                    iframe.src = embedUrl;
+                    iframe.allowFullscreen = true;
+                    iframe.sandbox = 'allow-same-origin allow-scripts allow-popups allow-forms allow-pointer-lock';
+                    iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+                    iframe.style.cssText = `
+                        width: 100%;
+                        height: 100%;
+                        border: none;
+                        display: block;
+                    `;
+                    iframe.setAttribute('scrolling', 'no');
+                    iframe.setAttribute('frameborder', '0');
+                    
+                    player.appendChild(iframe);
+                } else {
+                    // 对于其他视频，使用video标签
+                    const video = document.createElement('video');
+                    video.src = movieUrl;
+                    video.controls = true;
+                    video.crossOrigin = 'anonymous';
+                    video.style.cssText = `
+                        width: 100%;
+                        height: 100%;
+                        object-fit: contain;
+                    `;
+                    
+                    closeBtn.onclick = () => {
+                        video.pause();
+                        document.body.removeChild(modal);
+                    };
+                    
+                    player.appendChild(video);
+                    
+                    // 自动开始播放（如果浏览器允许）
+                    video.play().catch(error => {
+                        console.log('无法自动播放视频:', error);
+                    });
+                }
+                
+                player.appendChild(closeBtn);
+                modal.appendChild(player);
+                document.body.appendChild(modal);
+            }
+            
+            // 退出聊天室函数
+            function logout() {
+                window.isUserInitiatedLogout = true;
+                // 断开WebSocket连接
+                if (socket) {
+                    socket.emit('logout');
+                    socket.disconnect();
+                }
+                // 重定向到登录页面
+                setTimeout(function() {
+                    window.location.href = '/';
+                }, 500);
+            }
+
+        // 格式化消息（支持@高亮）
+        function formatMessage(message) {
+            // 高亮@命令
+            return message.replace(/(@\S+)/g, '<strong>$1</strong>');
+        }
+
+        // 添加用户到用户列表
+        function addUserToSidebar(username) {
+            const userItem = document.createElement('div');
+            userItem.className = 'user-item';
+            userItem.id = `user-${username}`;
+            userItem.innerHTML = `
+                <div class="user-avatar">${username.charAt(0).toUpperCase()}</div>
+                <div class="user-name">${username}</div>
+            `;
+            usersList.appendChild(userItem);
+        }
+
+        // 从用户列表移除用户
+        function removeUserFromSidebar(username) {
+            const userItem = document.getElementById(`user-${username}`);
+            if (userItem) {
+                userItem.remove();
+            }
+        }
+
+        // 初始化事件监听
+        function initEventListeners() {
+            // 为播放按钮添加事件委托
+            messagesContainer.addEventListener('click', (e) => {
+                const playBtn = e.target.closest('.play-btn');
+                if (playBtn) {
+                    const movieUrl = playBtn.getAttribute('data-movie-url');
+                    if (movieUrl) {
+                        playMovie(movieUrl);
+                    }
+                }
+            });
+            // 输入框事件
+            messageInput.addEventListener('input', () => {
+                checkSendButton();
+                adjustTextareaHeight();
+            });
+
+            // 发送按钮点击事件
+            sendBtn.addEventListener('click', sendMessage);
+
+            // 回车键发送消息
+            messageInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+
+            // 退出按钮点击事件
+            logoutBtn.addEventListener('click', () => {
+                if (confirm('确定要退出聊天室吗？')) {
+                    window.isUserInitiatedLogout = true;
+                    socket.emit('logout');
+                    socket.disconnect();
+                    window.location.href = '/';
+                }
+            });
+
+            // emoji按钮点击事件
+            emojiBtn.addEventListener('click', () => {
+                emojiPanel.classList.toggle('show');
+            });
+
+            // 点击外部关闭emoji面板
+            document.addEventListener('click', (e) => {
+                if (!emojiBtn.contains(e.target) && !emojiPanel.contains(e.target)) {
+                    emojiPanel.classList.remove('show');
+                }
+            });
+        }
+
+        // 发送消息
+        function sendMessage() {
+            const message = messageInput.value.trim();
+            if (!message) return;
+
+            socket.emit('send_message', {
+                nickname: nickname,
+                message: message
+            });
+
+            // 清空输入框
+            messageInput.value = '';
+            sendBtn.disabled = true;
+            messageInput.style.height = 'auto';
+        }
+
+        // WebSocket事件监听
+        function initSocketListeners() {
+            // 连接成功
+            socket.on('connect', () => {
+                console.log('WebSocket连接成功');
+                // 发送加入房间请求
+                socket.emit('join', { nickname: nickname });
+            });
+
+            // 连接断开
+            socket.on('disconnect', () => {
+                console.log('WebSocket连接断开');
+                // 只有在不是主动退出的情况下才显示提示
+                if (!window.isUserInitiatedLogout) {
+                    addMessage({
+                        is_system: true,
+                        message: '您已断开连接，请刷新页面重新连接'
+                    });
+                }
+            });
+
+            // 加入房间成功
+            socket.on('join_success', (data) => {
+                addMessage({
+                    is_system: true,
+                    message: `欢迎 ${data.nickname} 加入聊天室！`
+                });
+                onlineCount.textContent = data.online_count;
+                
+                // 清空用户列表并重新添加所有在线用户
+                usersList.innerHTML = '';
+                if (data.users && data.users.length > 0) {
+                    data.users.forEach(username => {
+                        addUserToSidebar(username);
+                    });
+                }
+            });
+
+            // 有新用户加入
+            socket.on('user_joined', (data) => {
+                addMessage({
+                    is_system: true,
+                    message: `${data.nickname} 加入了聊天室！`
+                });
+                onlineCount.textContent = data.online_count;
+                addUserToSidebar(data.nickname);
+            });
+
+            // 有用户离开
+            socket.on('user_left', (data) => {
+                addMessage({
+                    is_system: true,
+                    message: `${data.nickname} 离开了聊天室！`
+                });
+                onlineCount.textContent = data.online_count;
+                removeUserFromSidebar(data.nickname);
+            });
+
+            // 收到新消息
+            socket.on('new_message', (data) => {
+                const isSelf = data.nickname === nickname;
+                addMessage(data, isSelf);
+                
+                // 更新在线人数
+                if (data.online_count !== undefined) {
+                    document.getElementById('onlineCount').textContent = data.online_count;
+                }
+            });
+
+            // 收到命令响应
+            socket.on('command_response', (data) => {
+                // 确保添加is_command标志，并保留所有可能的命令特定字段
+                const messageData = {
+                    is_command: true,
+                    message: data.message,
+                    timestamp: new Date().toLocaleString() // 添加时间戳
+                };
+                
+                // 保留命令类型特定字段
+                if (data.command_type) {
+                    messageData.command_type = data.command_type;
+                }
+                
+                // 保留电影相关字段
+                if (data.movie_url) {
+                    messageData.movie_url = data.movie_url;
+                }
+                
+                // 保留川小农相关字段
+                if (data.reply) {
+                    messageData.reply = data.reply;
+                }
+                
+                // 保留用户信息
+                if (data.nickname) {
+                    messageData.nickname = data.nickname;
+                }
+                
+                if (data.user_question) {
+                    messageData.user_question = data.user_question;
+                }
+                
+                addMessage(messageData);
+            });
+
+            // 错误消息
+            socket.on('error', (data) => {
+                addMessage({
+                    is_system: true,
+                    message: `错误: ${data.message}`
+                });
+                // 如果是昵称重复错误，返回登录页
+                if (data.message.includes('昵称已被使用')) {
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                }
+            });
+        }
+
+        // 处理命令
+        function handleCommand(data) {
+            // 这里只做简单的响应，具体功能将在后续实现
+            setTimeout(() => {
+                let response = '';
+                
+                if (data.command_type === 'movie') {
+                    response = `🎬 电影命令已触发，URL: ${data.command_data}（功能开发中）`;
+                } else if (data.command_type === 'ai_chat') {
+                    response = `🤖 与川小农的对话功能开发中...`;
+                }
+                
+                if (response) {
+                    socket.emit('command_response', {
+                        message: response
+                    });
+                }
+            }, 1000);
+        }
+
+        // 初始化应用
+        function init() {
+            initEmojiPanel();
+            initEventListeners();
+            initSocketListeners();
+            adjustTextareaHeight();
+            
+            // 欢迎消息
+            addMessage({
+                is_system: true,
+                message: `您好 ${nickname}，请遵守聊天室规则，文明发言！`
+            });
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
