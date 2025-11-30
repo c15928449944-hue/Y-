@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DaiP智能聊天室 - 聊天中</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <!-- 引入emoji选择器库 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/emoji-picker-element@14.2.0/dist/emoji-picker-element-light.min.css">
+</head>
+<body>
+    <div class="chat-container">
+        <!-- 头部 -->
+        <header class="chat-header">
+            <h2 class="chat-title">DaiP智能聊天室</h2>
+            <div class="user-info">
+                <span class="username">欢迎，{{ username }}</span>
+                <button id="logout-btn" class="logout-btn">退出</button>
+            </div>
+        </header>
+
+        <!-- 主要内容区 -->
+        <main class="chat-main">
+            <!-- 在线用户列表 -->
+            <aside class="user-list">
+                <h3>在线用户 ( <span id="user-count">0</span> )</h3>
+                <ul class="users" id="user-list">
+                    <!-- 在线用户会动态添加到这里 -->
+                </ul>
+            </aside>
+
+            <!-- 聊天消息区 -->
+            <div class="chat-messages" id="chat-messages">
+                <div class="message system">
+                    <div class="message-content">欢迎来到DaiP智能聊天室！</div>
+                </div>
+                <div class="message system">
+                    <div class="message-content">使用@电影 URL 可分享视频，使用@川小农 可与AI助手对话</div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 消息输入区 -->
+        <div class="chat-form">
+            <div class="chat-input-container">
+                <textarea 
+                    id="chat-input" 
+                    class="chat-input" 
+                    placeholder="输入消息... (支持@电影 URL 和 @川小农 命令)"
+                    rows="1"
+                ></textarea>
+                <emoji-picker id="emoji-picker" class="emoji-picker"></emoji-picker>
+            </div>
+            <button id="emoji-btn" class="emoji-btn">😊</button>
+            <button id="send-btn" class="send-btn">✓</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/emoji-picker-element@14.2.0/dist/index.min.js"></script>
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+</html>
